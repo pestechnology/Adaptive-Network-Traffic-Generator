@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  backend:
+    build: .
+    container_name: atg_backend
+    network_mode: "host"
+    privileged: true
+    environment:
+      ATG_MONGO_URI: mongodb://localhost:27017
+      ATG_DB_NAME: atg_v1
+      ATG_CAPTURE_IFACE: eth0
+      ATG_API_KEY: ""
+      ATG_ALLOWED_ORIGINS: http://localhost:5173
+      ATG_ALLOWED_TARGETS: ""
+      ATG_MAX_PPS: 10000
+      ATG_MAX_DURATION: 60
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo:6
+    container_name: atg_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:
