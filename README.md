@@ -20,8 +20,7 @@ This system was developed as part of a cybersecurity and networking research ini
 - Setup Instructions  
 - Running the Application  
 - API Reference  
-- Authors  
-- Contact  
+- Authors & Contributors  
 
 ---
 
@@ -417,17 +416,31 @@ GET /scheduled-jobs
 
 ---
 
-# Authors
-
-- Anikait Nair <anikaitm752@gmail.com>  
-- Dr. Swetha P <swethap@pes.edu>  
-- Dr. Prasad B Honnahalli <prasadbh@pes.edu>  
+© Copyright 2026 PES University.
 
 ---
 
-# Contact
+## Authors:
 
-For further queries related to the project/application, reach out to:
+Anikait Nair - anikaitm752@gmail.com  
+Dr. Swetha P - swethap@pes.edu  
+Dr. Prasad B Honnahalli - prasadbh@pes.edu  
 
-ISFCR, PES University  
-Email: office.isfcr@pes.edu  
+---
+
+## Contributors:
+
+PurpleSynapz - info@purplesynapz.com  
+
+---
+
+Licensed under the Apache License, Version 2.0 (the "License");  
+You may not use this file except in compliance with the License.  
+You may obtain a copy of the License at:  
+http://www.apache.org/licenses/LICENSE-2.0  
+
+SPDX-License-Identifier: Apache-2.0  
+
+---
+
+For further queries related to the project/application, reach out to ISFCR, PES University - office.isfcr@pes.edu
