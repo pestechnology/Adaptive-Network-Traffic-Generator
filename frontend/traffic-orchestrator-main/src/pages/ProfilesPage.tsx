@@ -1,9 +1,26 @@
+/*
+ * Authors:
+ *   Anikait Nair - anikaitm752@gmail.com
+ *   Dr. Swetha P - swethap@pes.edu
+ *   Dr. Prasad B Honnavalli - prasadbh@pes.edu
+ *
+ * Contributors:
+ *   ISFCR - office.isfcr@pes.edu
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 import { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2, Play, Layers } from "lucide-react";
 import { useProfiles } from "@/lib/hooks/useProfiles";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { executeTraffic } from "@/lib/api";
 import { TrafficItem, Profile } from "@/types/traffic";
@@ -123,6 +140,9 @@ function ProfileModal({
           <DialogTitle className="text-white">
             {editingName ? "Edit Profile" : "Create Profile"}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Configure traffic steps and profile name.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 mt-2">
           <div>
@@ -354,6 +374,9 @@ export default function ProfilesPage() {
         <DialogContent style={{ background: "#12121a", border: "1px solid rgba(255,255,255,0.1)" }}>
           <DialogHeader>
             <DialogTitle className="text-white">Run "{runTarget}"</DialogTitle>
+            <DialogDescription className="sr-only">
+              Configure destination IP and launch the job.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div>

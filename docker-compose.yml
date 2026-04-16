@@ -1,28 +1,47 @@
 version: "3.9"
 
+# ─────────────────────────────────────────────────────────────────────────────
+# ATG Docker Compose
+#
+# Critical networking note:
+#   The backend uses network_mode: host (required for Scapy raw sockets).
+#   With host networking, the backend process sees the HOST network stack,
+#   so it cannot reach other containers via Docker's internal DNS.
+#
+#   Fix: mongodb also uses network_mode: host, binding to 127.0.0.1:27017
+#   on the host. The backend then connects via ATG_MONGO_URI=mongodb://localhost:27017
+#   which resolves correctly on the host network stack.
+# ─────────────────────────────────────────────────────────────────────────────
+
 services:
+
   backend:
     build: .
     container_name: atg_backend
+    restart: unless-stopped
     network_mode: "host"
     privileged: true
+    env_file:
+      - .env
     environment:
-      ATG_MONGO_URI: mongodb://localhost:27017
-      ATG_DB_NAME: atg_v1
-      ATG_CAPTURE_IFACE: eth0
-      ATG_API_KEY: ""
-      ATG_ALLOWED_ORIGINS: http://localhost:5173
-      ATG_ALLOWED_TARGETS: ""
-      ATG_MAX_PPS: 10000
-      ATG_MAX_DURATION: 60
+      ATG_MONGO_URI:        "mongodb://localhost:27017"
+      ATG_DB_NAME:          "atg_v1"
+      ATG_CAPTURE_IFACE:    "eth0"
+      ATG_API_KEY:          ""
+      ATG_ALLOWED_ORIGINS:  "http://localhost:5173,http://localhost:8080,http://127.0.0.1:5173,http://127.0.0.1:8080"
+      ATG_ALLOWED_TARGETS:  ""
+      ATG_MAX_PPS:          "10000"
+      ATG_MAX_DURATION:     "60"
     depends_on:
       - mongodb
 
   mongodb:
     image: mongo:6
     container_name: atg_mongo
-    ports:
-      - "27017:27017"
+    restart: unless-stopped
+    # Must also use host networking so the backend (on host stack) can
+    # reach it via localhost:27017.
+    network_mode: "host"
     volumes:
       - mongo_data:/data/db
 

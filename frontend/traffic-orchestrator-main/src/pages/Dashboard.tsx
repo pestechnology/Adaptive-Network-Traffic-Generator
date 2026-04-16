@@ -1,3 +1,20 @@
+/*
+ * Authors:
+ *   Anikait Nair - anikaitm752@gmail.com
+ *   Dr. Swetha P - swethap@pes.edu
+ *   Dr. Prasad B Honnavalli - prasadbh@pes.edu
+ *
+ * Contributors:
+ *   ISFCR - office.isfcr@pes.edu
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -23,6 +40,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Job } from "@/types/traffic";
@@ -220,7 +238,7 @@ export default function Dashboard() {
                       <span className="font-mono text-xs text-[#94a3b8]">{truncateId(j.job_id)}</span>
                       <CopyButton text={j.job_id} />
                     </td>
-                    <td className="px-4 py-3 text-white text-xs">{j.profile}</td>
+                    <td className="px-4 py-3 text-white text-xs">{j.profile_name}</td>
                     <td className="px-4 py-3 font-mono text-xs text-[#94a3b8]">{j.destination}</td>
                     <td className="px-4 py-3">
                       <StatusBadge state={j.state} />
@@ -280,6 +298,9 @@ export default function Dashboard() {
         <DialogContent style={{ background: "#12121a", border: "1px solid rgba(255,255,255,0.1)" }}>
           <DialogHeader>
             <DialogTitle className="text-white">New Job</DialogTitle>
+            <DialogDescription className="sr-only">
+              Configure the details and destination for a new traffic job.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div>

@@ -1,3 +1,20 @@
+/*
+ * Authors:
+ *   Anikait Nair - anikaitm752@gmail.com
+ *   Dr. Swetha P - swethap@pes.edu
+ *   Dr. Prasad B Honnavalli - prasadbh@pes.edu
+ *
+ * Contributors:
+ *   ISFCR - office.isfcr@pes.edu
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 import axios from "axios";
 import { ExecuteRequest, ExecuteResponse, Job } from "@/types/traffic";
 
@@ -45,7 +62,7 @@ export async function stopJob(jobId: string) {
 }
 
 // ── Jobs ──────────────────────────────────────────────────────────────────────
-export async function getJobs(): Promise<Record<string, Job>> {
+export async function getJobs(): Promise<Job[]> {
   const res = await axios.get(`${API_BASE}/jobs`);
   return res.data;
 }

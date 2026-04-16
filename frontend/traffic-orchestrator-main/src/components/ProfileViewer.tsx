@@ -1,3 +1,20 @@
+/*
+ * Authors:
+ *   Anikait Nair - anikaitm752@gmail.com
+ *   Dr. Swetha P - swethap@pes.edu
+ *   Dr. Prasad B Honnavalli - prasadbh@pes.edu
+ *
+ * Contributors:
+ *   ISFCR - office.isfcr@pes.edu
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 import { Shield, BarChart3, Activity, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getJobs } from "@/lib/api";
@@ -28,7 +45,7 @@ export function ProfileViewer({ profile }: ProfileViewerProps) {
     const fetchJobs = async () => {
       try {
         const jobs = await getJobs();
-        const profiles = Object.values(jobs).map((job: any) => job.profile);
+        const profiles = (jobs || []).map((job: any) => job.profile_name);
         setActiveProfiles(profiles);
       } catch {
         setActiveProfiles([]);

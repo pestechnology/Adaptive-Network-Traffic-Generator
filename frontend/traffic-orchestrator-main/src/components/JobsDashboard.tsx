@@ -1,3 +1,20 @@
+/*
+ * Authors:
+ *   Anikait Nair - anikaitm752@gmail.com
+ *   Dr. Swetha P - swethap@pes.edu
+ *   Dr. Prasad B Honnavalli - prasadbh@pes.edu
+ *
+ * Contributors:
+ *   ISFCR - office.isfcr@pes.edu
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 import { useEffect, useState, useRef } from "react";
 import { getJobs } from "@/lib/api";
 import { ProfileProtocolMonitor } from "@/components/ProfileProtocolMonitor";
@@ -12,6 +29,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Search } from "lucide-react";
 import type { Job } from "@/types/traffic";
@@ -64,16 +82,16 @@ export function JobsDashboard({ refreshTrigger }: Props) {
         const nextJobs = { ...prevJobs };
         const incomingIds = new Set();
 
-        // Convert object entries to normalized data
-        Object.entries(data).forEach(([key, rawJob]: [string, any]) => {
-          const id = rawJob.job_id || rawJob.id || key;
-          const profile = rawJob.profile ?? "Unknown";
+        // Convert array to normalized data
+        (data || []).forEach((rawJob: any) => {
+          const id = rawJob.job_id || rawJob.id;
+          const profile_name = rawJob.profile_name ?? "Unknown";
           incomingIds.add(id);
 
           const job: JobWithTimestamps = {
             ...rawJob,
             job_id: id,
-            profile: profile,
+            profile_name: profile_name,
           };
 
           // Track animation start time (for time-based fallback in monitor)
@@ -86,8 +104,9 @@ export function JobsDashboard({ refreshTrigger }: Props) {
             startedAtRef.current[job.job_id] = Date.now();
           }
 
-          // Track wall-clock end time (first time we see STOPPED)
-          if (job.state === "STOPPED" && !endedAtRef.current[job.job_id]) {
+          // Track wall-clock end time (first time we see STOPPED, COMPLETED, or FAILED)
+          const isFinalState = ["STOPPED", "COMPLETED", "FAILED"].includes(job.state);
+          if (isFinalState && !endedAtRef.current[job.job_id]) {
             endedAtRef.current[job.job_id] = Date.now();
             delete startTimes.current[job.job_id];
           }
@@ -96,9 +115,9 @@ export function JobsDashboard({ refreshTrigger }: Props) {
           job.started_at = startedAtRef.current[job.job_id];
           job.ended_at = endedAtRef.current[job.job_id];
 
-          // Detect completion: RUNNING/PAUSED → STOPPED
+          // Detect completion: RUNNING/PAUSED → STOPPED/COMPLETED/FAILED
           const prev = prevStates.current[job.job_id];
-          if ((prev === "RUNNING" || prev === "PAUSED") && job.state === "STOPPED") {
+          if ((prev === "RUNNING" || prev === "PAUSED") && isFinalState) {
             const endedAt = endedAtRef.current[job.job_id];
             const startedAt = startedAtRef.current[job.job_id];
             const elapsed = startedAt && endedAt
@@ -122,7 +141,7 @@ export function JobsDashboard({ refreshTrigger }: Props) {
                   </div>
                   <div className="text-xs text-muted-foreground space-y-0.5 pl-6">
                     <div>Job: <span className="font-mono text-foreground">{job.job_id}</span></div>
-                    <div>Profile: <span className="font-medium text-foreground">{job.profile}</span></div>
+                    <div>Profile: <span className="font-medium text-foreground">{job.profile_name}</span></div>
                     <div>Destination: <span className="font-mono text-foreground">{job.destination}</span></div>
                     <div>Packets: <span className="font-bold text-primary">{(job.packets_successful || 0).toLocaleString()} / {(job.packets_attempted || 0).toLocaleString()}</span></div>
                     {elapsed && <div>Duration: <span className="font-medium text-foreground">{elapsed}s</span></div>}
@@ -277,6 +296,9 @@ export function JobsDashboard({ refreshTrigger }: Props) {
               <Search className="h-5 w-5 text-primary" />
               Protocol Analysis & Header Inspection
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              Detailed protocol analysis and header inspection results.
+            </DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto mt-4 rounded-xl bg-muted/30 p-4 border border-border/50">
             {isFetchingHeaders ? (
@@ -360,7 +382,7 @@ export function JobsDashboard({ refreshTrigger }: Props) {
           <ProfileProtocolMonitor
             protocols={activeJobs.map((j) => ({
               id: j.job_id,
-              protocol: j.profile,
+              protocol: j.profile_name,
               packets_successful: j.packets_successful || 0,
               packets_attempted: j.packets_attempted || 0,
               duration_sec: j.duration_sec || 10,
@@ -502,7 +524,7 @@ function JobCard({
   const isFailed = job.state === "FAILED";
   const isCompleted = job.state === "COMPLETED";
 
-  const profileName = job.profile;
+  const profileName = job.profile_name;
   const totalExpected = profileTotals[profileName || ""] || 0;
 
   // 1) Transfer Progress Bar: packets_attempted / total_expected. Force 100% if STOPPED.
@@ -615,9 +637,9 @@ function JobCard({
         <div>
           <p className="text-[10px] uppercase tracking-widest text-text-secondary mb-1">Delivery</p>
           <div className="flex items-center gap-2">
-            <p className={`text-lg font-display font-bold ${(job.delivery_percent ?? 0) < 100 ? "text-warning" : "text-success"
+            <p className={`text-lg font-display font-bold ${Number(job.delivery_percent ?? 0) < 100 ? "text-warning" : "text-success"
               }`}>
-              {job.delivery_percent ?? 0}%
+              {Number(job.delivery_percent ?? 0).toFixed(2)}%
             </p>
             <ReliabilityBadge score={job.reliability_score ?? 0} />
           </div>
@@ -625,23 +647,23 @@ function JobCard({
         <div>
           <p className="text-[10px] uppercase tracking-widest text-text-secondary mb-1">Latency</p>
           <div className="text-lg font-display font-bold text-foreground">
-            {job.avg_latency_ms === 0
+            {Number(job.avg_latency_ms ?? 0) === 0
               ? <span className="text-[10px] text-text-secondary leading-tight block">No latency data</span>
-              : <>{job.avg_latency_ms ?? 0}<span className="text-[10px] ml-0.5 text-text-secondary">ms</span></>}
+              : <>{Number(job.avg_latency_ms ?? 0).toFixed(2)}<span className="text-[10px] ml-0.5 text-text-secondary">ms</span></>}
           </div>
         </div>
         <div>
           <p className="text-[10px] uppercase tracking-widest text-text-secondary mb-1">Throughput</p>
-          <p className={`text-lg font-display font-bold ${(job.throughput_mbps ?? 0) > 0 ? "text-success" : "text-text-secondary"
+          <p className={`text-lg font-display font-bold ${Number(job.throughput_mbps ?? 0) > 0 ? "text-success" : "text-text-secondary"
             }`}>
-            {(job.throughput_mbps ?? 0).toFixed(3)}<span className="text-[10px] ml-0.5 font-normal">Mbps</span>
+            {Number(job.throughput_mbps ?? 0).toFixed(3)}<span className="text-[10px] ml-0.5 font-normal">Mbps</span>
           </p>
         </div>
         <div>
           <p className="text-[10px] uppercase tracking-widest text-text-secondary mb-1">Reliability</p>
-          <p className={`text-lg font-display font-bold ${(job.reliability_score ?? 0) < 95 ? "text-destructive" : "text-foreground"
+          <p className={`text-lg font-display font-bold ${Number(job.reliability_score ?? 0) < 95 ? "text-destructive" : "text-foreground"
             }`}>
-            {job.reliability_score ?? 0}%
+            {Number(job.reliability_score ?? 0).toFixed(2)}%
           </p>
         </div>
 
@@ -650,7 +672,7 @@ function JobCard({
           <div className="flex flex-col items-center justify-center p-1 rounded-lg bg-surface/40 border border-border/10">
             <span className="text-[8px] uppercase tracking-wider text-text-secondary">Loss</span>
             <span className={`text-[10px] font-mono font-bold ${(job.packet_loss ?? 0) > 0 ? "text-destructive" : "text-text-secondary"}`}>
-              {job.packet_loss ?? 0}%
+              {(job.packets_attempted ?? 0) > 0 ? `${Number(job.packet_loss ?? 0).toFixed(2)}%` : "—"}
             </span>
           </div>
           <div className="flex flex-col items-center justify-center p-1 rounded-lg bg-surface/40 border border-border/10">
@@ -683,7 +705,7 @@ function JobCard({
       <div className="grid grid-cols-4 gap-4 mb-4">
         <div>
           <p className="text-[10px] uppercase tracking-widest text-text-secondary mb-1">Profile</p>
-          <p className="text-sm font-semibold truncate" title={job.profile}>{job.profile}</p>
+          <p className="text-sm font-semibold truncate" title={job.profile_name}>{job.profile_name}</p>
         </div>
         <div>
           <p className="text-[10px] uppercase tracking-widest text-text-secondary mb-1">Destination</p>

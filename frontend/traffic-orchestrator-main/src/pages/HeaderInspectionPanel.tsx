@@ -1,3 +1,20 @@
+/*
+ * Authors:
+ *   Anikait Nair - anikaitm752@gmail.com
+ *   Dr. Swetha P - swethap@pes.edu
+ *   Dr. Prasad B Honnavalli - prasadbh@pes.edu
+ *
+ * Contributors:
+ *   ISFCR - office.isfcr@pes.edu
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 import { useState } from "react";
 import { Search, Download, ChevronDown, ChevronUp } from "lucide-react";
 import { getHeaders, getPcapUrl, getExecutions } from "@/lib/api";
@@ -13,7 +30,7 @@ export default function HeaderInspectionPanel() {
   const [loadingHeaders, setLoadingHeaders] = useState(false);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
-  const { data: executions = [] } = useQuery<Array<{ job_id: string; state?: string; profile?: string }>>({
+  const { data: executions = [] } = useQuery<Array<{ job_id: string; state?: string; profile_name?: string }>>({
     queryKey: ["executions"],
     queryFn: getExecutions,
     refetchInterval: 10000,
@@ -77,7 +94,7 @@ export default function HeaderInspectionPanel() {
             <option value="">— Select an execution —</option>
             {executions.map((ex) => (
               <option key={ex.job_id} value={ex.job_id}>
-                {ex.job_id} {ex.profile ? `(${ex.profile})` : ""} {ex.state ? `[${ex.state}]` : ""}
+                {ex.job_id} {ex.profile_name ? `(${ex.profile_name})` : ""} {ex.state ? `[${ex.state}]` : ""}
               </option>
             ))}
           </select>

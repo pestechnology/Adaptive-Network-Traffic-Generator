@@ -1,3 +1,20 @@
+/*
+ * Authors:
+ *   Anikait Nair - anikaitm752@gmail.com
+ *   Dr. Swetha P - swethap@pes.edu
+ *   Dr. Prasad B Honnavalli - prasadbh@pes.edu
+ *
+ * Contributors:
+ *   ISFCR - office.isfcr@pes.edu
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Pause, Play, Square, Download, Briefcase } from "lucide-react";
 import { useJobs } from "@/lib/hooks/useJobs";
@@ -126,7 +143,7 @@ export default function JobsPage() {
                   <div className="flex-1 min-w-0 grid grid-cols-2 md:grid-cols-5 gap-3 items-center">
                     <div>
                       <div className="font-mono text-xs text-[#94a3b8] truncate">{j.job_id.slice(0, 12)}…</div>
-                      <div className="text-white text-xs font-medium truncate">{j.profile}</div>
+                      <div className="text-white text-xs font-medium truncate">{j.profile_name}</div>
                     </div>
                     <div className="font-mono text-xs text-[#94a3b8]">{j.destination}</div>
                     <StatusBadge state={j.state} />

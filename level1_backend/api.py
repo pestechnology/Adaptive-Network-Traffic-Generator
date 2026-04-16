@@ -1,3 +1,21 @@
+#
+# Authors:
+#   Anikait Nair - anikaitm752@gmail.com
+#   Dr. Swetha P - swethap@pes.edu
+#   Dr. Prasad B Honnavalli - prasadbh@pes.edu
+#
+# Contributors:
+#   ISFCR - office.isfcr@pes.edu
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
 import ctypes
 import ipaddress
 import os
@@ -29,12 +47,26 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Adaptive Traffic Generator", version="2.0.0")
 
-_ORIGINS = [
-    "http://localhost:5173",
-    "http://localhost:8080",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:8080",
-]
+# ── CORS ───────────────────────────────────────────────────────────────────────
+# Read from ATG_ALLOWED_ORIGINS env var, with safe defaults covering both Vite
+# (5173) and the alternate dev server port (8080).
+_env_origins = os.environ.get("ATG_ALLOWED_ORIGINS", "")
+_ORIGINS: list[str] = (
+    [o.strip() for o in _env_origins.split(",") if o.strip()]
+    if _env_origins
+    else [
+        "http://localhost:5173",
+        "http://localhost:8080",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:8080",
+    ]
+)
+# Always guarantee both ports are present regardless of env value
+for _p in ["http://localhost:5173", "http://localhost:8080",
+           "http://127.0.0.1:5173", "http://127.0.0.1:8080"]:
+    if _p not in _ORIGINS:
+        _ORIGINS.append(_p)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_ORIGINS,
@@ -43,6 +75,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ── Auth ───────────────────────────────────────────────────────────────────────
 _API_KEY = os.environ.get("ATG_API_KEY", "")
 _api_key_header = APIKeyHeader(name="X-ATG-API-Key", auto_error=False)
 
@@ -59,8 +92,8 @@ _PRIVATE_NETWORKS = [
     ipaddress.ip_network("127.0.0.0/8"),
 ]
 
-# ── Approval token store (in-process; one-time use, 5-min TTL) ─────────────────
-_approval_tokens: dict[str, float] = {}   # token → expiry epoch
+# ── Approval token store ───────────────────────────────────────────────────────
+_approval_tokens: dict[str, float] = {}
 _TOKEN_TTL = 300
 
 
@@ -77,8 +110,6 @@ def _consume_approval_token(token: str) -> bool:
     return time.time() < expiry
 
 
-# ── Auth ───────────────────────────────────────────────────────────────────────
-
 async def verify_api_key(key: Optional[str] = Security(_api_key_header)):
     if not _API_KEY:
         return
@@ -93,18 +124,10 @@ def _check_privileges():
     try:
         if sys.platform == "win32":
             if not ctypes.windll.shell32.IsUserAnAdmin():
-                logger.warning(
-                    "ATG is not running as Administrator. "
-                    "Raw packet injection and ICMP will fail. "
-                    "Restart as Administrator."
-                )
+                logger.warning("ATG not running as Administrator — ICMP will fail.")
         else:
             if os.geteuid() != 0:
-                logger.warning(
-                    "ATG is not running as root. "
-                    "Raw packet injection and ICMP will fail. "
-                    "Restart with sudo."
-                )
+                logger.warning("ATG not running as root — ICMP will fail.")
     except Exception:
         pass
 
@@ -113,15 +136,13 @@ def _validate_destination(destination: str) -> str:
     dest = destination.strip()
     if not dest:
         raise HTTPException(status_code=422, detail="destination must not be empty.")
-
     try:
         resolved_ip = socket.gethostbyname(dest)
     except socket.gaierror:
         raise HTTPException(
             status_code=422,
-            detail=f"Cannot resolve destination '{dest}'. Check the hostname or IP address.",
+            detail=f"Cannot resolve destination '{dest}'.",
         )
-
     try:
         addr = ipaddress.ip_address(resolved_ip)
     except ValueError:
@@ -129,22 +150,20 @@ def _validate_destination(destination: str) -> str:
             status_code=422,
             detail=f"'{resolved_ip}' is not a valid IP address.",
         )
-
     if any(addr in net for net in _PRIVATE_NETWORKS):
         return dest
-
     if _ALLOWED_TARGETS and dest not in _ALLOWED_TARGETS and resolved_ip not in _ALLOWED_TARGETS:
         raise HTTPException(
             status_code=403,
             detail=(
-                f"Public destination '{dest}' is not in the allowed targets list. "
-                "Add it to ATG_ALLOWED_TARGETS in your .env file."
+                f"Public destination '{dest}' is not in ATG_ALLOWED_TARGETS. "
+                "Add it to your .env file."
             ),
         )
-
     return dest
 
 
+# ── App state ──────────────────────────────────────────────────────────────────
 manager = ExecutionManager()
 scheduler: Optional[SchedulerService] = None
 
@@ -154,6 +173,15 @@ async def startup():
     global scheduler
     _check_privileges()
     initialize_database()
+
+    # Clean up any jobs left in RUNNING/CREATED state from the previous process.
+    # These are orphaned — their threads no longer exist and they can never
+    # complete or be stopped normally. Mark them FAILED immediately so the UI
+    # doesn't show phantom RUNNING jobs that cannot be terminated.
+    cleaned = manager.cleanup_stale_jobs()
+    if cleaned:
+        logger.warning("Cleaned up %d stale job(s) from previous session.", cleaned)
+
     scheduler = SchedulerService(manager)
 
 
@@ -190,7 +218,7 @@ class ScheduleIntervalRequest(BaseModel):
 
 class Level2RunRequest(BaseModel):
     destination_ip:      str
-    protocol:            str = "tcp"    # tcp | udp | icmp
+    protocol:            str = "tcp"
     packet_size:         int = 512
     duration_seconds:    int = 30
     packets_per_second:  int = 1000
@@ -207,16 +235,16 @@ class RFC2544Request(BaseModel):
 
 
 class MaliciousApproveRequest(BaseModel):
-    attack_type:    str   # must be in MALICIOUS_REGISTRY
-    justification:  str   # logged to audit
+    attack_type:   str
+    justification: str
 
 
 class MaliciousRunRequest(BaseModel):
     approval_token:   str
     attack_type:      str
     target_ip:        str
-    duration_seconds: int      = 10
-    intensity:        str      = "low"   # low | medium | high
+    duration_seconds: int = 10
+    intensity:        str = "low"
 
 
 # ── Execution Routes ───────────────────────────────────────────────────────────
@@ -283,7 +311,7 @@ def get_job(job_id: str):
     return snap
 
 
-# ── Execution History Routes ───────────────────────────────────────────────────
+# ── Execution History ──────────────────────────────────────────────────────────
 
 @app.get("/executions", dependencies=[Depends(verify_api_key)])
 def list_executions():
@@ -461,21 +489,19 @@ def malicious_approve(req: MaliciousApproveRequest):
     if req.attack_type not in MALICIOUS_REGISTRY:
         raise HTTPException(
             status_code=400,
-            detail=f"Unknown attack type. Valid types: {list(MALICIOUS_REGISTRY.keys())}",
+            detail=f"Unknown attack type. Valid: {list(MALICIOUS_REGISTRY.keys())}",
         )
     if not req.justification.strip():
         raise HTTPException(status_code=422, detail="justification must not be empty.")
-
     logger.warning(
-        "MALICIOUS APPROVAL REQUEST  attack=%s  justification=%r",
-        req.attack_type,
-        req.justification,
+        "MALICIOUS APPROVAL  attack=%s  justification=%r",
+        req.attack_type, req.justification,
     )
     token = _generate_approval_token()
     return {
-        "approval_token": token,
+        "approval_token":     token,
         "expires_in_seconds": _TOKEN_TTL,
-        "attack_type": req.attack_type,
+        "attack_type":        req.attack_type,
     }
 
 
@@ -484,21 +510,19 @@ async def malicious_run(req: MaliciousRunRequest):
     if not _consume_approval_token(req.approval_token):
         raise HTTPException(
             status_code=403,
-            detail="Invalid or expired approval token. Request a new one via POST /malicious/approve.",
+            detail="Invalid or expired approval token.",
         )
     if req.attack_type not in MALICIOUS_REGISTRY:
         raise HTTPException(status_code=400, detail="Unknown attack type.")
-
     target = _validate_destination(req.target_ip)
-
     if req.intensity not in ("low", "medium", "high"):
-        raise HTTPException(status_code=422, detail="intensity must be low | medium | high.")
-
+        raise HTTPException(
+            status_code=422, detail="intensity must be low | medium | high."
+        )
     logger.warning(
         "MALICIOUS RUN  attack=%s  target=%s  duration=%ds  intensity=%s",
         req.attack_type, target, req.duration_seconds, req.intensity,
     )
-
     job_id = await dispatch_malicious_profile(
         attack_type=req.attack_type,
         target_ip=target,
