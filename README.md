@@ -20,8 +20,8 @@ This system was developed as part of a cybersecurity and networking research ini
 - Setup Instructions  
 - Running the Application  
 - API Reference  
+- Authors  
 - Contact  
-- Disclaimer  
 
 ---
 
@@ -417,21 +417,17 @@ GET /scheduled-jobs
 
 ---
 
+# Authors
+
+- Anikait Nair <anikaitm752@gmail.com>  
+- Dr. Swetha P <swethap@pes.edu>  
+- Dr. Prasad B Honnahalli <prasadbh@pes.edu>  
+
+---
+
 # Contact
 
 For further queries related to the project/application, reach out to:
 
 ISFCR, PES University  
 Email: office.isfcr@pes.edu  
-
----
-
-# Disclaimer
-
-This tool is intended only for:
-
-- Educational use  
-- Research  
-- Authorized network testing  
-
-Do not use without proper authorization.
