@@ -424,7 +424,7 @@ GET /scheduled-jobs
 
 Anikait Nair - anikaitm752@gmail.com  
 Dr. Swetha P - swethap@pes.edu  
-Dr. Prasad B Honnahalli - prasadbh@pes.edu  
+Dr. Prasad B Honnavalli - prasadbh@pes.edu  
 
 ---
 
