@@ -2,24 +2,44 @@
 
 A modular network testing platform designed to generate controlled traffic, capture packets, analyze network behavior, and evaluate system performance.
 
-The Adaptive Traffic Generator enables structured traffic simulations using multiple protocols while verifying delivery using packet capture and **receiver-side validation (Level-2 architecture)**.
+This system was developed as part of a cybersecurity and networking research initiative focused on traffic validation, execution control, and end-to-end network verification.
+
+---
+
+# Table of Contents
+
+- Overview  
+- System Architecture  
+- Execution Workflow  
+- Packet Capture Pipeline  
+- Features  
+- Project Structure  
+- Technologies Used  
+- Hardware Requirements  
+- Software Requirements  
+- Setup Instructions  
+- Running the Application  
+- API Reference  
+- Contact  
+- Disclaimer  
 
 ---
 
 # Overview
 
-ATG provides a flexible framework to:
+The Adaptive Network Traffic Generator (ATG) enables structured traffic simulation and validation across multiple protocols using a modular and extensible architecture.
 
-- Generate protocol-based traffic
-- Capture packets during execution
-- Analyze captured traffic
-- Verify sent vs received packets
-- Perform **end-to-end validation using receiver agents**
-- Schedule traffic executions
-- Store execution results and metrics
-- Inspect packet headers for debugging
+The system not only generates traffic but also verifies delivery using a dual validation approach, combining packet capture analysis with receiver-side validation (Level-2 architecture).
 
-The system follows a **modular architecture** allowing components to evolve independently.
+The platform provides the following capabilities:
+
+- Protocol-based traffic generation  
+- Execution-synchronized packet capture  
+- PCAP-based traffic analysis  
+- End-to-end packet validation using receiver agents  
+- Execution control and scheduling  
+- Metrics generation and storage  
+- Header-level packet inspection for debugging  
 
 ---
 
@@ -43,6 +63,8 @@ flowchart LR
 
 ---
 
+## Backend Architecture
+
 ```mermaid
 flowchart LR
 
@@ -51,8 +73,6 @@ flowchart LR
     UI --> API
 
     subgraph Backend["FastAPI Backend Controller"]
-        API[API Layer]
-
         API --> ExecutionManager
         API --> ProfileRepo
         API --> ExecutionRepo
@@ -137,27 +157,21 @@ flowchart TD
     Start[Execution Start]
 
     Start --> CaptureStart
-
     CaptureStart[CaptureManager.start]
 
     CaptureStart --> Traffic
-
     Traffic[Traffic Generation]
 
     Traffic --> CaptureStop
-
     CaptureStop[CaptureManager.stop]
 
     CaptureStop --> PCAP
-
     PCAP[PCAP File Created]
 
     PCAP --> Analyzer
-
     Analyzer[CaptureAnalyzer]
 
     Analyzer --> Metrics
-
     Metrics --> MongoDB
 ```
 
@@ -166,224 +180,166 @@ flowchart TD
 # Features
 
 ## Traffic Generation
-
-Supported protocols:
-
-- ICMP
-- HTTP
-- HTTPS
-- SSH
-
-Configurable parameters:
-
-- Packet count
-- Packet size
-- Duration based traffic
-- Packets per second rate
+- Supports ICMP, HTTP, HTTPS, SSH  
+- Configurable packet count, size, duration, and rate  
 
 ---
 
 ## Packet Capture
-
-- Real-time packet sniffing using **Scapy**
-- Automatic **PCAP generation**
-- Destination based filtering
-- Capture triggered during execution
+- Real-time packet sniffing using Scapy  
+- Automatic PCAP generation  
+- Capture triggered during execution lifecycle  
+- Destination-based filtering  
 
 ---
 
 ## Receiver Validation (Level-2)
-
-- End-to-end packet verification
-- Latency tracking
-- Duplicate detection
-- Sequence validation
-- Corruption detection
+- End-to-end packet verification  
+- Latency tracking  
+- Duplicate packet detection  
+- Sequence validation  
+- Corruption detection  
 
 ---
 
 ## Packet Analysis
-
-CaptureAnalyzer performs:
-
-- Packet count verification
-- Byte analysis
-- Protocol breakdown
-- Delivery percentage calculation
+- Packet count verification  
+- Byte-level analysis  
+- Protocol breakdown  
+- Delivery percentage calculation  
 
 ---
 
 ## Header Inspection
-
-HeaderInspector extracts:
-
-- Protocol distribution
-- TCP flag statistics
-- ICMP type distribution
-- Packet size statistics
+- Protocol distribution  
+- TCP flag statistics  
+- ICMP type distribution  
+- Packet size statistics  
 
 ---
 
 ## Execution Control
-
-Traffic executions support:
-
-- Start
-- Pause
-- Resume
-- Stop
+- Start  
+- Pause  
+- Resume  
+- Stop  
 
 ---
 
 ## Scheduling
-
-Scheduler supports:
-
-- One-time execution
-- Interval based execution
+- One-time execution  
+- Interval-based execution  
 
 ---
 
 ## Persistent Storage
-
 MongoDB stores:
 
-- Traffic profiles
-- Execution history
-- Metrics
-- PCAP file references
+- Traffic profiles  
+- Execution history  
+- Metrics  
+- PCAP file references  
 
 ---
 
 # Project Structure
 
 ```
-adaptive-traffic-generator/
+backend/
 
-├── core/
+├── level0/
+│   ├── cli.py
 │   ├── execution_engine.py
 │   ├── job_state.py
-│   └── senders/
-│       ├── icmp_sender.py
-│       └── tcp_sender.py
-│
-├── backend/
-│   ├── api.py
-│   ├── execution_manager.py
+│   ├── main.py
+│   ├── receiver_manager.py
+│   ├── run_receiver.py
 │   ├── scheduler_service.py
+│   ├── test_receiver.py
+│   ├── __init__.py
+│   │
+│   ├── receivers/
+│   │   ├── tcp_receiver.py
+│   │   └── __init__.py
+│   │
+│   └── senders/
+│       ├── packet_sender.py
+│       └── __init__.py
+│
+├── level1_backend/
+│   ├── api.py
+│   ├── db_init.py
+│   ├── execution_manager.py
+│   ├── models.py
+│   ├── __init__.py
+│   │
 │   ├── capture/
-│   │   ├── capture_manager.py
 │   │   ├── capture_analyzer.py
-│   │   └── header_inspector.py
+│   │   ├── capture_manager.py
+│   │   ├── capture_repository.py
+│   │   ├── capture_utils.py
+│   │   ├── header_inspector.py
+│   │   └── __init__.py
+│   │
+│   ├── scheduler/
+│   │   ├── scheduler_service.py
+│   │   └── __init__.py
+│   │
 │   └── storage/
+│       ├── execution_repository.py
 │       ├── mongo.py
 │       ├── profile_repository.py
-│       └── execution_repository.py
+│       ├── scheduler_repository.py
+│       └── __init__.py
 │
-├── receiver/
-│   ├── receiver_server.py
-│   ├── packet_validator.py
-│   ├── latency_tracker.py
-│   └── metrics_engine.py
-│
-├── frontend/
-├── pcap_files/
-├── docs/
-├── tests/
-└── README.md
+├── level2/
+│   ├── destination_agent.py
+│   ├── level2_sender.py
+│   ├── main_controller.py
+│   ├── malicious_profiles.py
+│   ├── rfc2544_engine.py
+│   └── __init__.py
 ```
 
 ---
 
-# Technology Stack
+# Technologies Used
 
-Backend
+## Backend
+- Python  
+- FastAPI  
+- Scapy  
 
-- Python
-- FastAPI
-- Scapy
+## Frontend
+- Web dashboard interface  
 
-Frontend
+## Database
+- MongoDB  
 
-- Web dashboard interface
-
-Database
-
-- MongoDB
-
-Packet Analysis
-
-- PCAP based traffic inspection
-
----
-
-# API Endpoints
-
-### Health
-```
-GET /health
-```
-
-### Profile Management
-```
-POST /profiles
-GET /profiles
-GET /profiles/{profile_name}
-```
-
-### Execution
-```
-POST /execute
-GET /jobs
-GET /executions
-GET /executions/{job_id}
-```
-
-### Packet Capture
-```
-GET /executions/{job_id}/pcap
-```
-
-### Header Inspection
-```
-GET /executions/{job_id}/headers
-```
-
-### Execution Control
-```
-POST /pause/{job_id}
-POST /resume/{job_id}
-POST /stop/{job_id}
-```
-
-### Scheduler
-```
-POST /schedule/once
-POST /schedule/interval
-GET /scheduled-jobs
-```
+## Packet Analysis
+- PCAP-based traffic inspection  
 
 ---
 
 # Hardware Requirements
 
 ## Minimum
-- Dual-core CPU
-- 4 GB RAM (8 GB recommended)
+- Dual-core CPU  
+- 4 GB RAM (8 GB recommended)  
 
 ## Recommended
-- Quad-core CPU
-- 8–16 GB RAM
-- Ethernet connection
+- Quad-core CPU  
+- 8–16 GB RAM  
+- Ethernet connection  
 
 ---
 
 # Software Requirements
 
-- Python 3.10+
-- Node.js 18+
-- MongoDB
-- Npcap (Windows) / libpcap (Linux)
+- Python 3.10+  
+- Node.js 18+  
+- MongoDB  
+- Npcap (Windows) / libpcap (Linux)  
 
 ---
 
@@ -399,23 +355,74 @@ python -m uvicorn backend.api:app
 
 ---
 
-# Current Implementation Status
+# Running the Application
 
-- Traffic generation engine
-- Execution manager
-- Packet capture system
-- Packet analysis
-- Header inspection
-- Scheduler
-- MongoDB integration
-- PCAP export
-- Level-2 receiver validation
+## Backend API (Swagger UI)
+```
+http://localhost:8000/docs
+```
+
+## Frontend Dashboard
+```
+http://localhost:3000
+```
 
 ---
 
-# License
+# API Reference
 
-MIT License
+## Health
+```
+GET /health
+```
+
+## Profile Management
+```
+POST /profiles
+GET /profiles
+GET /profiles/{profile_name}
+```
+
+## Execution
+```
+POST /execute
+GET /jobs
+GET /executions
+GET /executions/{job_id}
+```
+
+## Packet Capture
+```
+GET /executions/{job_id}/pcap
+```
+
+## Header Inspection
+```
+GET /executions/{job_id}/headers
+```
+
+## Execution Control
+```
+POST /pause/{job_id}
+POST /resume/{job_id}
+POST /stop/{job_id}
+```
+
+## Scheduler
+```
+POST /schedule/once
+POST /schedule/interval
+GET /scheduled-jobs
+```
+
+---
+
+# Contact
+
+For further queries related to the project/application, reach out to:
+
+ISFCR, PES University  
+Email: office.isfcr@pes.edu  
 
 ---
 
@@ -423,8 +430,8 @@ MIT License
 
 This tool is intended only for:
 
-- Educational use
-- Research
-- Authorized network testing
+- Educational use  
+- Research  
+- Authorized network testing  
 
-Do not use without permission.
+Do not use without proper authorization.
