@@ -223,11 +223,17 @@ cd Adaptive-Network-Traffic-Generator
 ## Backend
 
 ```
-cd backend
-python -m venv venv
-venv\Scripts\activate
+cd /Users/lapac/Documents/projects/Adaptive-Network-Traffic-Generator
+brew services start mongodb-community
+/opt/homebrew/bin/python3.12 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
+export ATG_MONGO_URI="mongodb://localhost:27017"
+export ATG_DB_NAME="atg_v1"
+sudo -E .venv/bin/uvicorn level1_backend.api:app --host 0.0.0.0 --port 8000 --reload
 ```
+
+If you are on macOS and do not need ICMP traffic or packet capture, you can omit `sudo -E` and run `uvicorn` directly. ICMP and Scapy capture require elevated privileges on macOS.
 
 ---
 
