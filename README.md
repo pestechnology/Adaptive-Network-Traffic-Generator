@@ -221,18 +221,32 @@ cd Adaptive-Network-Traffic-Generator
 ---
 
 ## Backend
+### windows 
+```
+cd /Users/lapac/Documents/projects/Adaptive-Network-Traffic-Generator
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+set ATG_MONGO_URI=mongodb://localhost:27017
+set ATG_DB_NAME=atg_v1
+
+<!-- run as Administrator -->
+uvicorn level1_backend.api:app --host 0.0.0.0 --port 8000 --reload
+```
+### mac / Linux 
 
 ```
 cd /Users/lapac/Documents/projects/Adaptive-Network-Traffic-Generator
-brew services start mongodb-community
-/opt/homebrew/bin/python3.12 -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+
 export ATG_MONGO_URI="mongodb://localhost:27017"
 export ATG_DB_NAME="atg_v1"
+
 sudo -E .venv/bin/uvicorn level1_backend.api:app --host 0.0.0.0 --port 8000 --reload
 ```
-
 If you are on macOS and do not need ICMP traffic or packet capture, you can omit `sudo -E` and run `uvicorn` directly. ICMP and Scapy capture require elevated privileges on macOS.
 
 ---
@@ -240,7 +254,7 @@ If you are on macOS and do not need ICMP traffic or packet capture, you can omit
 ## Frontend
 
 ```
-cd frontend
+cd frontend/traffic-orchestrator-main
 npm install
 npm run dev
 ```
@@ -256,7 +270,8 @@ http://localhost:8000/docs
 
 ### Frontend
 ```
-http://localhost:3000
+http://localhost:8080 
+<!-- check PORT NO IN vite.config.ts /other than  that it doesnt work regarless of the port no in ur cmd -->
 ```
 
 ---
