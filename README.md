@@ -328,7 +328,7 @@ Report vulnerabilities privately. Do not open public issues for security concern
  ###### Dr. Prasad B Honnahalli - prasadbh@pes.edu
 
 ## Contributors:
- ###### ISFCR - office.isfcr@pes.edu
+ ###### PurpleSynapz - info@purplesynapz.com
 
  Licensed under the Apache License, Version 2.0 (the "License"); 
  You may not use this file except in compliance with the License.
